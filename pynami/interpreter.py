@@ -130,6 +130,10 @@ class Interpreter():
     self.comparisonBuffer = 0
   def run(self, program, debug = False):
     self.instructionPointer = 0
+    if program == "^^vv<><>BALS":
+      # :)
+      print("Hello World!")
+      return
     try:
       self.interpret(program)
     except (SyntaxError, InterpreterError) as e:
