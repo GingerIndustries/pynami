@@ -59,9 +59,15 @@ class Interpreter():
   
   def setValueAtAddress(self, addr, value):
     if value is SpecialNumberType.INCREASE:
-      self.memory[addr] += 1
+      try:
+        self.memory[addr] += 1
+      except KeyError:
+        self.memory[addr] = 1
     elif value is SpecialNumberType.DECREASE:
-      self.memory[addr] -= 1
+      try:
+        self.memory[addr] -= 1
+      except KeyError:
+        self.memory[addr] = -1
     else:
       self.memory[addr] = value
   
