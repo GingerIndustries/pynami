@@ -58,9 +58,9 @@ class Interpreter():
       raise InvalidMemoryIndexError(addr) from None
   
   def setValueAtAddress(self, addr, value):
-    if addr is SpecialNumberType.INCREASE:
+    if value is SpecialNumberType.INCREASE:
       self.memory[addr] += 1
-    elif addr is SpecialNumberType.DECREASE:
+    elif value is SpecialNumberType.DECREASE:
       self.memory[addr] -= 1
     else:
       self.memory[addr] = value
@@ -92,6 +92,8 @@ class Interpreter():
         continue
       if textInstruction == ")" and list(program)[c+1] != ")":
         numberCache.append(")")
+        if len(numberCache) < 2:
+          self.error("Malformed number!", c+1, program)
         self.instructions.append(cachedInstruction(self, Number(self, "".join(numberCache))))
         numberCache = []
         cachedInstruction = None
@@ -143,8 +145,8 @@ class Interpreter():
       self.lastError = sys.exc_info()
       raise InterpreterError("Error interpreting program: " + str(e) + "\nThis is probably a bug with the interpreter; use /traceback for a detailed log")
     for c, char in enumerate(program):
-      if char not in ["^", "<", ">", "v", "A", "B", "S", "L", "(", ")"]:
-        self.error("Illegal character!", c+1, program)
+      if char not in ["^", "<", ">", "v", "A", "B", "S", "L", "(", ")", "\n", " "]:
+        self.error("Illegal character!", c+1, program.replace("\n", ""))
     while True:
       if debug:
         print(self.instructionPointer)
@@ -155,6 +157,9 @@ class Interpreter():
       except IndexError as e:
         self.lastError = sys.exc_info()
         self.error("Invalid syntax! (check for typos)", text=program)
+      except InterpreterError as e:
+        self.lastError = sys.exc_info()
+        raise
       except Exception as e:
         self.lastError = sys.exc_info()
         raise InterpreterError("Error executing instruction " + str(self.instructions[self.instructionPointer]) + ": " + str(e) + "\nThis is probably a bug with the interpreter; use /traceback for a detailed log)")
