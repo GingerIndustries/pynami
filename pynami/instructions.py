@@ -57,31 +57,34 @@ class SetAddressInstruction(Instruction):
   def __init__(self, interpreter, value):
     super().__init__(interpreter)
     self.value = value.value
+    self.rep = value
   
   def execute(self):
     self.interpreter.setValueAtAddress(self.interpreter.addressPointer, self.value)
   def __str__(self):
-    return ">" + str(self.value)
+    return "v" + str(self.rep)
 
 class SetPointerInstruction(Instruction):
   def __init__(self, interpreter, address):
     super().__init__(interpreter)
     self.address = address.value
+    self.rep = address
   
   def execute(self):
     self.interpreter.setAddressPointer(self.address)
   def __str__(self):
-    return "^" + str(self.address)
+    return ">" + str(self.rep)
 
 class SetComparisonBufferInstruction(Instruction):
   def __init__(self, interpreter, value):
     super().__init__(interpreter)
     self.value = value.value
+    self.rep = value
   
   def execute(self):
     self.interpreter.setComparisonBuffer(self.value)
   def __str__(self):
-    return "S"
+    return "S" + str(self.rep)
 
 class OutputInstruction(Instruction):
   def execute(self):
@@ -92,6 +95,12 @@ class OutputInstruction(Instruction):
   
   def __str__(self):
     return "<<"
+
+class RawOutputInstruction(Instruction):
+  def execute(self):
+    print(self.interpreter.getValueAtAddress(self.interpreter.addressPointer), end="")
+  def __str__(self):
+    return "<<<"
 
 class InputInstruction(Instruction):
   def __init__(self, interpreter):
@@ -106,27 +115,38 @@ class InputInstruction(Instruction):
     return ">>"
 
 class LoopMarker(Instruction):
+  def __init__(self, interpreter, id):
+    super().__init__(interpreter)
+    self.id = id.value
   def __str__(self):
-    return "L"
+    return "L" + str(self.id)
 
-class ForwardsJumpInstruction(Instruction):
+class EqualJumpInstruction(Instruction):
+  def __init__(self, interpreter, id):
+    super().__init__(interpreter)
+    self.id = id.value
   def execute(self):
     if self.interpreter.getValueAtAddress(self.interpreter.addressPointer) == self.interpreter.comparisonBuffer:
-      for pointer, instruction in enumerate(self.interpreter.instructions[self.interpreter.instructionPointer:]):
+      for pointer, instruction in enumerate(self.interpreter.instructions):
         if type(instruction) == LoopMarker:
-          self.interpreter.instructionPointer = pointer
-          break
+          if instruction.id == self.id:
+            self.interpreter.instructionPointer = pointer
+            return
+      self.interpreter.error("No matching ID! (" + str(self.id) + ")", 1, str(self))
   def __str__(self):
-    return "A"
-class BackwardsJumpInstruction(Instruction):
+    return "A" + str(self.id)
+class UnequalJumpInstruction(Instruction):
+  def __init__(self, interpreter, id):
+    super().__init__(interpreter)   
+    self.id = id.value
   def execute(self):
     #print(self.interpreter.getValueAtAddress(self.interpreter.addressPointer) != self.interpreter.comparisonBuffer)
     if self.interpreter.getValueAtAddress(self.interpreter.addressPointer) != self.interpreter.comparisonBuffer:
-      pointer = self.interpreter.instructionPointer
-      for instruction in list(reversed(self.interpreter.instructions[:self.interpreter.instructionPointer])):
-        pointer -= 1
+      for pointer, instruction in enumerate(self.interpreter.instructions):
         if type(instruction) == LoopMarker:
-          self.interpreter.instructionPointer = pointer
-          break
+          if instruction.id == self.id:
+            self.interpreter.instructionPointer = pointer
+            return
+      self.interpreter.error("No matching ID! (" + str(self.id) + ")", 1, str(self))
   def __str__(self):
-    return "B"
+    return "B" + str(self.id)
