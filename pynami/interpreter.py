@@ -153,11 +153,12 @@ class Interpreter():
     for c, char in enumerate(program):
       if char not in ["^", "<", ">", "v", "A", "B", "S", "L", "(", ")", "\n", " "]:
         self.error("Illegal character!", c+1, program.replace("\n", ""))
+    if debug:
+      print(str(self.instructions))
     while True:
       if debug:
-        print(self.instructionPointer)
-        print(str(self.instructions))
-        print(self.addressPointer)
+        print("Instruction pointer:", self.instructionPointer)
+        print("Address pointer:", self.addressPointer)
       try:
         self.instructions[self.instructionPointer].execute()
       except IndexError as e:
