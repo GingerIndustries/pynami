@@ -26,7 +26,11 @@ def repl():
   pp = pprint.PrettyPrinter(indent=4)
   
   while True:
-    code = input(">>> ")
+    try:
+      code = input(">>> ")
+    except KeyboardInterrupt:
+      print("Goodbye!")
+      exit()
     if code == "":
       pass
     elif code == "/help":
@@ -66,11 +70,23 @@ def repl():
       exit(0)
     elif code.startswith("/load"):
       name = " ".join(code.split(" ")[1:])
-      kc = open(name)
+      try:
+        kc = open(name)
+      except FileNotFoundError:
+        print("No such file:", name)
+        continue
+      except OSError as e:
+        print("Error loading file \"", name, "\":", str(e))
+        continue
       interpreter.fileName = " ".join(code.split(" ")[1:])
       program = kc.read()
       kc.close()
-      run(program, interpreter, debug, True)
+      interpreter.restart()
+      print("=====INTERPRETER RESTART=====")
+      try:
+        run(program, interpreter, debug, False)
+      except KeyboardInterrupt:
+        print("Program terminated.")
       interpreter.fileName = "<shell>"
     elif code.startswith("/toascii"):
       try:
@@ -85,7 +101,10 @@ def repl():
     elif code.startswith("/"):
       print("Invalid command")
     else:
-      run(code, interpreter, debug, autorestart)
+      try:
+        run(code, interpreter, debug, autorestart)
+      except KeyboardInterrupt:
+        print("Program terminated.")
 
 if __name__ == "__main__":
   repl()
