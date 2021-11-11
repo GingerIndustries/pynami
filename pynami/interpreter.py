@@ -2,6 +2,7 @@ from .errors import *
 from .instructions import *
 import sys
 import string
+import threading
 
 def prepare(program):
   # Removes comments, linebreaks, and spaces from a passed program
@@ -41,6 +42,7 @@ class Interpreter():
     self.instructionPointer = 0
     self.instructions = []
     self.comparisonBuffer = 0
+    self.depth = 0
     self.__repl__ = repl
     self.__outputnumbers__ = False
   
@@ -90,7 +92,8 @@ class Interpreter():
   def interpret(self, program):
     numberCache = []
     cachedInstruction = None
-    program += " "
+    program += "  "
+    usedIDs = []
     skipNextInstruction = False #for << and >>
     for c, textInstruction in enumerate(list(program)):
       if skipNextInstruction:
@@ -100,6 +103,13 @@ class Interpreter():
         numberCache.append(")")
         if len(numberCache) < 2:
           self.error("Malformed number!", c+1, program)
+        if cachedInstruction == EqualJumpInstruction or cachedInstruction == UnequalJumpInstruction:
+          if Number(self, "".join(numberCache)).value in usedIDs:
+            self.error("Duplicate loop ID!", c, program)
+        if cachedInstruction == EqualJumpInstruction or cachedInstruction == UnequalJumpInstruction or cachedInstruction == LoopMarker:
+          _ = Number(self, "".join(numberCache)).value
+          if _ == SpecialNumberType.INCREASE or _ == SpecialNumberType.DECREASE:
+            self.error("Cannot use special numbers here!", c, program)
         self.instructions.append(cachedInstruction(self, Number(self, "".join(numberCache))))
         numberCache = []
         cachedInstruction = None
@@ -114,21 +124,25 @@ class Interpreter():
         cachedInstruction = SetAddressInstruction
       elif textInstruction == ">":
         if list(program)[c+1] == ">":
-          skipNextInstruction = True
+          skipInstructions = 1
           self.instructions.append(InputInstruction(self))
         else:
           cachedInstruction = SetPointerInstruction
       elif textInstruction == "S":
         cachedInstruction = SetComparisonBufferInstruction
       elif textInstruction == "<" and list(program)[c+1] == "<":
-        skipNextInstruction = True
-        self.instructions.append(OutputInstruction(self))
+        if list(program)[c+2] == "<":
+          skipInstructions = 2
+          self.instructions.append(RawOutputInstruction(self))
+        else:
+          skipInstructions = 1
+          self.instructions.append(OutputInstruction(self))
       elif textInstruction == "L":
-        self.instructions.append(LoopMarker(self))
+        cachedInstruction = LoopMarker
       elif textInstruction == "A":
-        self.instructions.append(ForwardsJumpInstruction(self))
+        cachedInstruction = EqualJumpInstruction
       elif textInstruction == "B":
-        self.instructions.append(BackwardsJumpInstruction(self))
+        cachedInstruction = UnequalJumpInstruction
   
   def restart(self):
     self.memory = {}
@@ -136,11 +150,13 @@ class Interpreter():
     self.instructionPointer = 0
     self.instructions = []
     self.comparisonBuffer = 0
+    self.depth = 0
+
   def run(self, program, debug = False):
     self.instructionPointer = 0
     if program == "^^vv<><>BALS":
       # :)
-      print("Hello, World!")
+      print("Hello World!")
       return
     try:
       self.interpret(program)
@@ -153,12 +169,8 @@ class Interpreter():
     for c, char in enumerate(program):
       if char not in ["^", "<", ">", "v", "A", "B", "S", "L", "(", ")", "\n", " "]:
         self.error("Illegal character!", c+1, program.replace("\n", ""))
-    if debug:
-      print(str(self.instructions))
+    
     while True:
-      if debug:
-        print("Instruction pointer:", self.instructionPointer)
-        print("Address pointer:", self.addressPointer)
       try:
         self.instructions[self.instructionPointer].execute()
       except IndexError as e:
