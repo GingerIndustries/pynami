@@ -140,7 +140,7 @@ class Interpreter():
     self.instructionPointer = 0
     if program == "^^vv<><>BALS":
       # :)
-      print("Hello World!")
+      print("Hello, World!")
       return
     try:
       self.interpret(program)
