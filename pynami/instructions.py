@@ -124,9 +124,9 @@ class BackwardsJumpInstruction(Instruction):
     if self.interpreter.getValueAtAddress(self.interpreter.addressPointer) != self.interpreter.comparisonBuffer:
       pointer = self.interpreter.instructionPointer
       for instruction in list(reversed(self.interpreter.instructions[:self.interpreter.instructionPointer])):
+        pointer -= 1
         if type(instruction) == LoopMarker:
           self.interpreter.instructionPointer = pointer
           break
-        pointer -= 1
   def __str__(self):
     return "B"
