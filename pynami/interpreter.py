@@ -2,7 +2,6 @@ from .errors import *
 from .instructions import *
 import sys
 import string
-import threading
 
 def prepare(program):
   # Removes comments, linebreaks, and spaces from a passed program
@@ -30,7 +29,7 @@ def prepare(program):
   
   if len(commentPositions):
     program = removeChunk(program, commentPositions)
-  return program
+  return program.replace("\n", "").replace(" ", "")
 
 
 class Interpreter():
@@ -94,10 +93,10 @@ class Interpreter():
     cachedInstruction = None
     program += "  "
     usedIDs = []
-    skipNextInstruction = False #for << and >>
+    skipInstructions = 0 #for << and >>
     for c, textInstruction in enumerate(list(program)):
-      if skipNextInstruction:
-        skipNextInstruction = False
+      if skipInstructions > 0:
+        skipInstructions -= 1
         continue
       if textInstruction == ")" and list(program)[c+1] != ")":
         numberCache.append(")")
