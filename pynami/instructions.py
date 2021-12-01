@@ -108,8 +108,12 @@ class InputInstruction(Instruction):
   
   def execute(self):
     value = input()
-    for addr, char in enumerate(value, start=self.interpreter.addressPointer):
-      self.interpreter.setValueAtAddress(addr, ord(char))
+    if value:
+      f = 0
+      for addr, char in enumerate(value, start=self.interpreter.addressPointer):
+        self.interpreter.setValueAtAddress(addr, ord(char))
+        f = addr
+      self.interpreter.setAddressPointer(f+1)
   
   def __str__(self):
     return ">>"
