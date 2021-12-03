@@ -39,7 +39,7 @@ class Number():
       value = self.interpreter.comparisonBuffer
     elif self.rep == "((^))":
       value = self.interpreter.getValueAtAddress(self.interpreter.addressPointer)
-    elif self.rep == "(<)":
+    elif self.rep == "((<))":
       value = self.interpreter.addressPointer
     else:
       value = parseNumber(self.rep, self.interpreter)
