@@ -34,7 +34,7 @@ class Number():
     if self.rep == "((>))":
       value = SpecialNumberType.INCREASE
     elif self.rep == "((<))":
-      value == SpecialNumberType.DECREASE
+      value = SpecialNumberType.DECREASE
     elif self.rep == "((S))":
       value = self.interpreter.comparisonBuffer
     elif self.rep == "((^))":
