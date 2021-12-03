@@ -146,10 +146,11 @@ class EqualJumpInstruction(Instruction):
     if self.interpreter.getValueAtAddress(self.interpreter.addressPointer) == self.interpreter.comparisonBuffer:
       for pointer, instruction in enumerate(self.interpreter.instructions):
         if type(instruction) == LoopMarker:
-          if instruction.id == self.id.getValue():
+          if instruction.id.getValue() == self.id.getValue():
             self.interpreter.instructionPointer = pointer
             return
       self.interpreter.error("No matching ID! (" + str(self.id) + ")", 1, str(self))
+
   def __str__(self):
     return "A" + str(self.id)
 class UnequalJumpInstruction(Instruction):
@@ -161,7 +162,7 @@ class UnequalJumpInstruction(Instruction):
     if self.interpreter.getValueAtAddress(self.interpreter.addressPointer) != self.interpreter.comparisonBuffer:
       for pointer, instruction in enumerate(self.interpreter.instructions):
         if type(instruction) == LoopMarker:
-          if instruction.id == self.id.getValue():
+          if instruction.id.getValue() == self.id.getValue():
             self.interpreter.instructionPointer = pointer
             return
       self.interpreter.error("No matching ID! (" + str(self.id) + ")", 1, str(self))
