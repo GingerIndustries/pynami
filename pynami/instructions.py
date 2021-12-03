@@ -29,19 +29,22 @@ class Number():
   def __init__(self, interpreter, representation):
     self.numberType = None
     self.rep = representation
-    #print(self.rep)
-    if representation == "((>))":
-      self.value = SpecialNumberType.INCREASE
-    elif representation == "((<))":
-      self.value == SpecialNumberType.DECREASE
-    elif representation == "((S))":
-      self.value = interpreter.comparisonBuffer
-    elif representation == "((^))":
-      self.value = interpreter.getValueAtAddress(interpreter.addressPointer)
-    elif representation == "(<)":
-      self.value = interpreter.addressPointer
+    self.interpreter = interpreter
+  def getValue(self):
+    if self.rep == "((>))":
+      value = SpecialNumberType.INCREASE
+    elif self.rep == "((<))":
+      value == SpecialNumberType.DECREASE
+    elif self.rep == "((S))":
+      value = self.interpreter.comparisonBuffer
+    elif self.rep == "((^))":
+      value = self.interpreter.getValueAtAddress(self.interpreter.addressPointer)
+    elif self.rep == "(<)":
+      value = self.interpreter.addressPointer
     else:
-      self.value = parseNumber(representation, interpreter)
+      value = parseNumber(self.rep, self.interpreter)
+    return value
+    
   
   def __str__(self):
     return self.rep
@@ -56,33 +59,33 @@ class Instruction():
 class SetAddressInstruction(Instruction):
   def __init__(self, interpreter, value):
     super().__init__(interpreter)
-    self.value = value.value
+    self.value = value
     self.rep = value
   
   def execute(self):
-    self.interpreter.setValueAtAddress(self.interpreter.addressPointer, self.value)
+    self.interpreter.setValueAtAddress(self.interpreter.addressPointer, self.value.getValue())
   def __str__(self):
     return "v" + str(self.rep)
 
 class SetPointerInstruction(Instruction):
   def __init__(self, interpreter, address):
     super().__init__(interpreter)
-    self.address = address.value
+    self.address = address
     self.rep = address
   
   def execute(self):
-    self.interpreter.setAddressPointer(self.address)
+    self.interpreter.setAddressPointer(self.address.getValue())
   def __str__(self):
     return ">" + str(self.rep)
 
 class SetComparisonBufferInstruction(Instruction):
   def __init__(self, interpreter, value):
     super().__init__(interpreter)
-    self.value = value.value
+    self.value = value
     self.rep = value
   
   def execute(self):
-    self.interpreter.setComparisonBuffer(self.value)
+    self.interpreter.setComparisonBuffer(self.value.getValue())
   def __str__(self):
     return "S" + str(self.rep)
 
@@ -118,37 +121,47 @@ class InputInstruction(Instruction):
   def __str__(self):
     return ">>"
 
+class RawInputInstruction(Instruction):
+  def execute(self):
+    try:
+      value = int(input())
+    except ValueError:
+      value = 0
+    self.interpreter.setValueAtAddress(self.interpreter.addressPointer, value)
+  def __str__(self):
+    return ">>>"
+
 class LoopMarker(Instruction):
   def __init__(self, interpreter, id):
     super().__init__(interpreter)
-    self.id = id.value
+    self.id = id
   def __str__(self):
-    return "L" + str(self.id)
+    return "L" + str(self.id.getValue())
 
 class EqualJumpInstruction(Instruction):
-  def __init__(self, interpreter, id):
+  def __init__(self, interpreter, id_):
     super().__init__(interpreter)
-    self.id = id.value
+    self.id = id_
   def execute(self):
     if self.interpreter.getValueAtAddress(self.interpreter.addressPointer) == self.interpreter.comparisonBuffer:
       for pointer, instruction in enumerate(self.interpreter.instructions):
         if type(instruction) == LoopMarker:
-          if instruction.id == self.id:
+          if instruction.id == self.id.getValue():
             self.interpreter.instructionPointer = pointer
             return
       self.interpreter.error("No matching ID! (" + str(self.id) + ")", 1, str(self))
   def __str__(self):
     return "A" + str(self.id)
 class UnequalJumpInstruction(Instruction):
-  def __init__(self, interpreter, id):
+  def __init__(self, interpreter, id_):
     super().__init__(interpreter)   
-    self.id = id.value
+    self.id = id_
   def execute(self):
     #print(self.interpreter.getValueAtAddress(self.interpreter.addressPointer) != self.interpreter.comparisonBuffer)
     if self.interpreter.getValueAtAddress(self.interpreter.addressPointer) != self.interpreter.comparisonBuffer:
       for pointer, instruction in enumerate(self.interpreter.instructions):
         if type(instruction) == LoopMarker:
-          if instruction.id == self.id:
+          if instruction.id == self.id.getValue():
             self.interpreter.instructionPointer = pointer
             return
       self.interpreter.error("No matching ID! (" + str(self.id) + ")", 1, str(self))
