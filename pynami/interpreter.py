@@ -2,6 +2,7 @@ from .errors import *
 from .instructions import *
 import sys
 import string
+import threading
 
 def prepare(program):
   # Removes comments, linebreaks, and spaces from a passed program
@@ -103,10 +104,10 @@ class Interpreter():
         if len(numberCache) < 2:
           self.error("Malformed number!", c+1, program)
         if cachedInstruction == EqualJumpInstruction or cachedInstruction == UnequalJumpInstruction:
-          if Number(self, "".join(numberCache)).value in usedIDs:
+          if Number(self, "".join(numberCache)).getValue() in usedIDs:
             self.error("Duplicate loop ID!", c, program)
         if cachedInstruction == EqualJumpInstruction or cachedInstruction == UnequalJumpInstruction or cachedInstruction == LoopMarker:
-          _ = Number(self, "".join(numberCache)).value
+          _ = Number(self, "".join(numberCache)).getValue()
           if _ == SpecialNumberType.INCREASE or _ == SpecialNumberType.DECREASE:
             self.error("Cannot use special numbers here!", c, program)
         self.instructions.append(cachedInstruction(self, Number(self, "".join(numberCache))))
@@ -123,8 +124,12 @@ class Interpreter():
         cachedInstruction = SetAddressInstruction
       elif textInstruction == ">":
         if list(program)[c+1] == ">":
-          skipInstructions = 1
-          self.instructions.append(InputInstruction(self))
+          if list(program)[c+2] == ">":
+            skipInstructions = 2
+            self.instructions.append(RawInputInstruction(self))
+          else:
+            skipInstructions = 1
+            self.instructions.append(InputInstruction(self))
         else:
           cachedInstruction = SetPointerInstruction
       elif textInstruction == "S":
